@@ -1,0 +1,18 @@
+# Recorded data and trained models: large, machine-specific, regenerated.
+data/
+outputs/
+deploy/logs/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+*.zarr/
+*.ckpt
+*.npz
+!src/arclab_dvrk/assets/*.npz
+
+wandb/
+.vscode/
+.idea/

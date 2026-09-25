@@ -1,0 +1,34 @@
+name: surgflow_image
+
+dataset_path: ${oc.env:SURGFLOW_DP_DATASET,/home/arclab/workspace/Surgflow-Nicole/data/diffusion_policy/surgworldflow_block0620.zarr}
+image_shape: &image_shape [3, 120, 160]
+
+shape_meta: &shape_meta
+  obs:
+    image:
+      shape: *image_shape
+      type: rgb
+    agent_pos:
+      shape: [14]
+      type: low_dim
+    start_end_points:
+      # Per-episode goal: [start_u, start_v, end_u, end_v], normalised to [0,1].
+      shape: [4]
+      type: low_dim
+  action:
+    shape: [14]
+
+env_runner:
+  _target_: diffusion_policy.env_runner.surgflow_image_runner.SurgFlowImageRunner
+
+dataset:
+  _target_: diffusion_policy.dataset.surgflow_image_dataset.SurgFlowImageDataset
+  zarr_path: ${task.dataset_path}
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  n_obs_steps: ${n_obs_steps}
+  seed: ${training.seed}
+  val_ratio: 0.10
+  max_train_episodes: null
+

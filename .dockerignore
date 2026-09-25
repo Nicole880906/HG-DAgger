@@ -1,0 +1,26 @@
+# Keep the build context tiny: the image only needs environment.docker.yml
+# and src/diffusion. Everything large is bind-mounted at runtime.
+.git
+.claude
+.vscode
+data
+outputs
+outputs_new
+calib
+deploy
+data_processing
+weights
+wandb
+artifacts
+src/arclab_dvrk
+src/surgflow
+src/diffusion/data
+src/diffusion/media
+src/diffusion/.git
+**/__pycache__
+*.pyc
+*.ckpt
+*.pt
+*.pth
+*.zarr
+.docker_home
