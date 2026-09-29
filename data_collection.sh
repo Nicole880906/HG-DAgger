@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Record drawing demonstrations on the dVRK.
 #
-#   bash data_collection.sh                  # -> data/drawing_circle/
-#   bash data_collection.sh --task rectangle # -> data/drawing_rectangle/
+#   bash data_collection.sh my_circles         # -> data/my_circles/
+#   bash data_collection.sh --task my_circles  # same thing
+#
+# The folder name is required, so episodes never land in a default folder.
 #
 # Teleoperate the arms from the console (or move them by hand) and draw the
 # shape. Episode control is by jaw pinch, so your hands never leave the masters:
@@ -23,9 +25,17 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-111}"
+# Keep DDS on the wired dVRK link; over the default transports this machine
+# sees the console's topics but never receives their data. See the XML.
+export FASTRTPS_DEFAULT_PROFILES_FILE="${FASTRTPS_DEFAULT_PROFILES_FILE:-$REPO_DIR/fastdds_wired.xml}"
 
-TASK=circle
+TASK=""
 FORWARD=()
+# A bare first argument is the folder name. Only the first, so ROS remap
+# arguments (a:=b) later on the line are not mistaken for it.
+if [[ $# -gt 0 && "$1" != -* ]]; then
+    TASK="$1"; shift
+fi
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --task)
@@ -43,11 +53,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# --task is a shorthand for --task-dir. If the caller passed --task-dir
-# explicitly it is in FORWARD and argparse's last-wins behaviour lets it
-# override the default placed ahead of it.
-TASK_DIR="data/drawing_${TASK}"
+if [[ -z "$TASK" ]]; then
+    echo "error: give the data folder name, e.g. bash data_collection.sh my_circles" >&2
+    exit 2
+fi
 
+# The name is a shorthand for --task-dir. If the caller passed --task-dir
+# explicitly it is in FORWARD and argparse's last-wins behaviour lets it
+# override the value placed ahead of it.
+TASK_DIR="data/${TASK}"
+
+# ROS 2 setup scripts reference unset variables (AMENT_TRACE_SETUP_FILES and
+# friends), so -u has to come off while they are sourced.
+set +u
 source /opt/ros/humble/setup.bash
 for overlay in "$REPO_DIR/install/setup.bash" /docker-ros/ws/install/setup.bash; do
     if [[ -f "$overlay" ]]; then
@@ -55,6 +73,7 @@ for overlay in "$REPO_DIR/install/setup.bash" /docker-ros/ws/install/setup.bash;
         break
     fi
 done
+set -u
 
 echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
 echo "task:        ${TASK}"

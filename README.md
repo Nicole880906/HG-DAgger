@@ -102,7 +102,7 @@ cd /docker-ros/ws
 # --- ROS shell, dVRK desktop ------------------------------------------------
 # 1. record demonstrations. PSM1 jaw pinch 3x -> start, PSM2 jaw pinch 3x ->
 #    stop + save, Ctrl+C -> quit. Writes data/drawing_square/episode_NNNN/.
-bash data_collection.sh --task square
+bash data_collection.sh drawing_square
 
 # --- container shell --------------------------------------------------------
 # 2. episodes -> Diffusion Policy Zarr (5 Hz, 160x120, absolute actions)
@@ -178,8 +178,8 @@ for. Jaw pinches start and stop each episode so your hands never leave the
 masters.
 
 ```bash
-bash data_collection.sh --task circle       # -> data/drawing_circle/
-bash data_collection.sh --task rectangle    # -> data/drawing_rectangle/
+bash data_collection.sh drawing_circle     # -> data/drawing_circle/
+bash data_collection.sh drawing_rectangle  # -> data/drawing_rectangle/
 ```
 
 * pinch the **PSM1** jaw 3× within ~2 s → start recording
@@ -551,3 +551,17 @@ publisher. What that cannot cover:
   draws a recognisable circle is an empirical question this scaffolding does not
   answer. Expect the first round to need corrections; that is what section 8 is
   for.
+
+
+stereo_stitch.sh
+export ROS_DOMAIN_ID=111
+conda deactivate
+source /opt/ros/humble/setup.bash
+source ~/dvrk_ws/install/setup.bash
+python3 ~/dvrk_ws/src/arclab_dvrk/rectification.py
+data_collection.sh
+python data_processing/convert_drawing_6d_abs.py data/task1 data/diffusion_policy/task1.zarr
+
+DP_DATASET=data/diffusion_policy/task1.zarr \
+DP_OUTPUT=outputs/task1_round0 \
+bash train_drawing_policy.sh --train
