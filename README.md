@@ -559,9 +559,12 @@ conda deactivate
 source /opt/ros/humble/setup.bash
 source ~/dvrk_ws/install/setup.bash
 python3 ~/dvrk_ws/src/arclab_dvrk/rectification.py
-data_collection.sh
-python data_processing/convert_drawing_6d_abs.py data/task1 data/diffusion_policy/task1.zarr
 
-DP_DATASET=data/diffusion_policy/task1.zarr \
-DP_OUTPUT=outputs/task1_round0 \
+data_collection.sh taskX
+
+conda activate robodiff
+python data_processing/convert_drawing_6d_abs.py data/task2 data/diffusion_policy/task2.zarr
+
+DP_DATASET=data/diffusion_policy/task2.zarr \
+DP_OUTPUT=outputs/task2_round0 \
 bash train_drawing_policy.sh --train
