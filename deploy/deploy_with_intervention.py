@@ -193,6 +193,17 @@ class InterventionDeployNode(Node):
         self.args = args
 
         self.policy = load_checkpoint_policy(args)
+        trained_rate = float(self.policy.control_rate_hz)
+        if args.rate is None:
+            args.rate = trained_rate
+        elif not np.isclose(args.rate, trained_rate, rtol=0.0, atol=1e-6):
+            raise SystemExit(
+                f"--rate={args.rate:g} Hz does not match this checkpoint's "
+                f"{trained_rate:g} Hz action spacing. Reconvert/retrain for that "
+                "rate, or omit --rate to use the checkpoint value."
+            )
+        self.get_logger().info(
+            f"Control rate: {args.rate:g} Hz (checkpoint action spacing: {trained_rate:g} Hz)")
         self.action_mode = self.policy.action_mode
         if self.policy.obs_dim != OBS_DIM or self.policy.act_dim != OBS_DIM:
             raise SystemExit(
@@ -863,7 +874,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                    help="Task name, used for the run directory and the recorded goal")
 
     g = p.add_argument_group("control")
-    g.add_argument("--rate", type=float, default=10.0, help="Control loop rate (Hz)")
+    g.add_argument("--rate", type=float, default=None,
+                   help="Control loop rate (Hz). Defaults to the checkpoint's training rate "
+                        "(5 Hz for older drawing checkpoints).")
     g.add_argument("--max-pos-step", type=float, default=0.005,
                    help="Max EE position change (m) per streamed command")
     g.add_argument("--max-angle-step-deg", type=float, default=2.0,
@@ -920,9 +933,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                    help="Where to write the per-cycle .npz log")
 
     args = p.parse_args(argv)
-    for name in ("rate", "max_pos_step", "record_rate", "max_angle_step_deg"):
+    for name in ("max_pos_step", "record_rate", "max_angle_step_deg"):
         if getattr(args, name) <= 0:
             p.error(f"--{name.replace('_', '-')} must be positive")
+    if args.rate is not None and args.rate <= 0:
+        p.error("--rate must be positive")
     if args.align_seconds < 0:
         p.error("--align-seconds must be >= 0")
     return args

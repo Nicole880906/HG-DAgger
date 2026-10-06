@@ -88,15 +88,18 @@ export SURGFLOW_DP_DATASET="$DP_DATASET"
 export SURGFLOW_DP_OUTPUT="$DP_OUTPUT"
 
 # Auto-detect state/action dims, action representation, and goal presence.
-read -r STATE_DIM ACTION_DIM ACTION_REPR HAS_GOAL < <(
+read -r STATE_DIM ACTION_DIM ACTION_REPR HAS_GOAL POLICY_RATE_HZ < <(
     "$PYTHON_BIN" - <<'PY'
-import os, zarr
+import math, os, zarr
 root = zarr.open_group(os.environ["DP_DATASET"], mode="r")
 state_dim = int(root["data/agent_pos"].shape[1])
 action_dim = int(root["data/action"].shape[1])
 action_repr = root.attrs.get("action_representation", "unknown")
 has_goal = "start_end_points" in root["data"]
-print(state_dim, action_dim, action_repr, int(has_goal))
+policy_rate_hz = float(root.attrs.get("sample_rate_hz", 5.0))
+if not math.isfinite(policy_rate_hz) or policy_rate_hz <= 0:
+    raise ValueError(f"sample_rate_hz must be positive, got {policy_rate_hz}")
+print(state_dim, action_dim, action_repr, int(has_goal), policy_rate_hz)
 PY
 )
 
@@ -106,6 +109,7 @@ echo "python:      $($PYTHON_BIN -c 'import sys; print(sys.executable)')"
 echo "state dim:   $STATE_DIM"
 echo "action dim:  $ACTION_DIM"
 echo "action repr: $ACTION_REPR"
+echo "policy rate: $POLICY_RATE_HZ Hz"
 echo "goal:        $([[ "$HAS_GOAL" == "1" ]] && echo "start_end_points" || echo "none")"
 
 # shape_meta overrides so the policy matches this dataset's dims.
@@ -114,6 +118,7 @@ shape_overrides=(
     # .hydra/config.yaml, so which Zarr a checkpoint was trained on stays
     # recoverable from the output directory alone.
     "task.dataset_path=$DP_DATASET"
+    "task.control_rate_hz=$POLICY_RATE_HZ"
     "task.shape_meta.obs.agent_pos.shape=[$STATE_DIM]"
     "task.shape_meta.action.shape=[$ACTION_DIM]"
 )

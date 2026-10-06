@@ -119,6 +119,13 @@ class TestConvertedZarr:
         assert root["data/image"].shape[1:] == (120, 160, 3)
         assert root["data/image"].dtype == np.uint8
 
+    def test_policy_rate_metadata_matches_the_frame_stride(self, converted):
+        """Deployment must consume each learned waypoint at the Zarr sample rate."""
+        _, root, _ = converted
+        assert root.attrs["record_rate_hz"] == pytest.approx(30.0)
+        assert root.attrs["sample_rate_hz"] == pytest.approx(30.0 / FRAME_STRIDE)
+        assert root.attrs["action_offset_seconds"] == pytest.approx(1.0 / (30.0 / FRAME_STRIDE))
+
     def test_row_count_matches_the_stride(self, converted):
         """Every 6th frame of each extracted episode, and nothing else."""
         dataset, root, _ = converted

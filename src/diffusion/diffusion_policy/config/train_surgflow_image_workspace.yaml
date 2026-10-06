@@ -9,7 +9,7 @@ task_name: ${task.name}
 shape_meta: ${task.shape_meta}
 exp_name: default
 
-# Ten-Hz control: observe 0.2 s, predict 1.6 s, execute 0.4 s.
+# Five-Hz control: observe 0.4 s, predict 3.2 s, execute 0.8 s.
 horizon: 16
 n_obs_steps: 2
 n_action_steps: 4
@@ -136,4 +136,3 @@ hydra:
   sweep:
     dir: ${oc.env:SURGFLOW_DP_OUTPUT,/home/arclab/workspace/Surgflow/data/diffusion_policy/outputs}/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}
     subdir: ${hydra.job.num}
-

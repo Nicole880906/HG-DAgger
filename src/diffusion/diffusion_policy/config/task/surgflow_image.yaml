@@ -1,6 +1,10 @@
 name: surgflow_image
 
 dataset_path: ${oc.env:SURGFLOW_DP_DATASET,/home/arclab/workspace/Surgflow-Nicole/data/diffusion_policy/surgworldflow_block0620.zarr}
+# Stored in every checkpoint so deployment consumes action chunks at the same
+# temporal spacing as the Zarr used for training. The launcher overrides this
+# from the Zarr's sample_rate_hz attribute.
+control_rate_hz: 5.0
 image_shape: &image_shape [3, 120, 160]
 
 shape_meta: &shape_meta
@@ -31,4 +35,3 @@ dataset:
   seed: ${training.seed}
   val_ratio: 0.10
   max_train_episodes: null
-

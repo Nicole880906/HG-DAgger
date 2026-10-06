@@ -86,6 +86,8 @@ IMAGE_KEYS = {
 POSE_DIM_PER_ARM = 10
 
 FRAME_STRIDE = 6
+RECORD_RATE_HZ = 30.0
+POLICY_RATE_HZ = RECORD_RATE_HZ / FRAME_STRIDE
 WIDTH = 160
 HEIGHT = 120
 IMAGE = "left"
@@ -323,6 +325,9 @@ def convert(
         "rotation_6d_convention": "pytorch3d matrix_to_rotation_6d (first two rows); source quat wxyz",
         "action_representation": "absolute_next_state",
         "action_offset_raw_frames": action_offset,
+        "record_rate_hz": RECORD_RATE_HZ,
+        "sample_rate_hz": POLICY_RATE_HZ,
+        "action_offset_seconds": action_offset / RECORD_RATE_HZ,
     })
 
     cursor = 0
@@ -435,7 +440,7 @@ def main() -> int:
     print(f"  output:         {output_zarr}")
     print(f"  episodes:       {len(episodes)}")
     print(f"  samples:        {total}")
-    print(f"  frame stride:   {frame_stride}")
+    print(f"  frame stride:   {frame_stride} ({POLICY_RATE_HZ:g} Hz policy rate)")
     print(f"  action offset:  {action_offset} raw frames")
     print(f"  image:          {image_key}, RGB {HEIGHT}x{WIDTH}")
     print(f"  arms:           {', '.join(arms)}")

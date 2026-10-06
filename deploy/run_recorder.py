@@ -19,7 +19,8 @@ irreversibly at 30 Hz while the robot is moving.
 Sampling rate
 -------------
 Frames are appended by a **30 Hz timer**, not by the control loop, which runs at
-around 10 Hz.  The converter takes every 6th frame to reach the 5 Hz the policy
+the checkpoint's action rate (5 Hz for drawing policies). The converter takes
+every 6th frame to reach the 5 Hz the policy
 trains at, so a run recorded at the control rate would come out at 1.7 Hz and
 the corrections would be sampled three times coarser than the demonstrations
 they are meant to join.  Keep the recorder at the collector's 30 Hz.

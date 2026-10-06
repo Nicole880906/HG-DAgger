@@ -26,6 +26,7 @@ RETRACT_JOINTS = slice(7, 13)
 RETRACT_JAW = 13
 ACTION_DIM = 14
 TARGET_HW = (120, 160)  # (H, W)
+DEFAULT_CONTROL_RATE_HZ = 5.0
 
 
 def checkpoint_dims(checkpoint: str | Path) -> tuple[int, int]:
@@ -100,6 +101,22 @@ def load_policy(checkpoint: str | Path, device: torch.device) -> tuple[torch.nn.
     return policy, policy_key, cfg
 
 
+def checkpoint_control_rate_hz(cfg: Any) -> float:
+    """Return the action spacing recorded in a checkpoint's training config.
+
+    Older checkpoints predate this metadata; their drawing Zarrs were sampled
+    at 5 Hz, so preserve that convention instead of reviving the old 10 Hz
+    deployment default.
+    """
+    try:
+        rate = float(cfg.task.control_rate_hz)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        rate = DEFAULT_CONTROL_RATE_HZ
+    if not np.isfinite(rate) or rate <= 0:
+        raise ValueError(f"checkpoint control_rate_hz must be positive, got {rate}")
+    return rate
+
+
 def preprocess_image_rgb(image_rgb: np.ndarray) -> np.ndarray:
     """Native RGB HWC uint8/float -> CHW float32 in [0, 1] at policy resolution."""
     image = np.asarray(image_rgb)
@@ -137,6 +154,7 @@ class SurgFlowDVRKDeploy:
     n_action_steps: int = 4
     obs_dim: int = ACTION_DIM
     act_dim: int = ACTION_DIM
+    control_rate_hz: float = DEFAULT_CONTROL_RATE_HZ
     image_history: deque = field(default_factory=deque)
     agent_pos_history: deque = field(default_factory=deque)
     start_end_points: np.ndarray | None = None
@@ -154,6 +172,7 @@ class SurgFlowDVRKDeploy:
         self.policy = policy
         self.policy_key = policy_key
         self.cfg = cfg
+        self.control_rate_hz = checkpoint_control_rate_hz(cfg)
         self.n_obs_steps = int(policy.n_obs_steps)
         self.n_action_steps = int(policy.n_action_steps)
         try:

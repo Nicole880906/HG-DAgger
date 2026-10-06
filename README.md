@@ -351,7 +351,7 @@ scene a human has just rearranged is the worst available option.
 | Flag | Default | |
 |---|---|---|
 | `--execute` | off | Actually publish. Without it, a full dry run. |
-| `--rate` | 10 Hz | Control loop rate |
+| `--rate` | checkpoint rate (5 Hz for existing drawing checkpoints) | Control loop rate; an explicit value must match the checkpoint's action spacing |
 | `--max-pos-step` | 0.005 m | Per-command position clamp |
 | `--align-seconds` | 1.0 s | Alignment window, both directions. Pass `5` for the window described above. |
 | `--max-angle-step-deg` | 2.0° | Per-command orientation clamp |
@@ -554,12 +554,6 @@ publisher. What that cannot cover:
 
 
 stereo_stitch.sh
-export ROS_DOMAIN_ID=111
-conda deactivate
-source /opt/ros/humble/setup.bash
-source ~/dvrk_ws/install/setup.bash
-python3 ~/dvrk_ws/src/arclab_dvrk/rectification.py
-
 data_collection.sh taskX
 
 conda activate robodiff
